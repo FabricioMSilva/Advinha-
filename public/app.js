@@ -225,12 +225,11 @@ function renderGames() {
 }
 
 function sortGamesByFilter(jogos) {
-  const ascending = currentFilter === "aposta_minima";
   return [...jogos].sort((a, b) => {
     const aValue = Number(a[currentFilter] ?? 0);
     const bValue = Number(b[currentFilter] ?? 0);
-    if (aValue < bValue) return ascending ? -1 : 1;
-    if (aValue > bValue) return ascending ? 1 : -1;
+    if (aValue < bValue) return 1;
+    if (aValue > bValue) return -1;
     return 0;
   });
 }
