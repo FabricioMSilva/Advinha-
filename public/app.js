@@ -125,7 +125,8 @@ function formatPercent(value) {
 
 function formatBetValue(value) {
   const number = Number(value || 0);
-  return Number.isFinite(number) ? number.toString().replace(/\.0$/, "") : "0";
+  if (!Number.isFinite(number)) return "0";
+  return number.toString().replace(/\.0$/, "");
 }
 
 function renderRow(jogo, index) {
@@ -133,23 +134,49 @@ function renderRow(jogo, index) {
     ? `<img class="thumb" src="${jogo.imagem_url}" alt="${jogo.nome}" loading="lazy">`
     : `<div class="thumb"></div>`;
 
-  const minClass = getMetricClass(jogo.aposta_minima);
-  const distClass = getMetricClass(jogo.distribuicao);
-  const avgClass = getMetricClass(jogo.media);
-  const apostaPadrao = jogo.aposta_padrao || jogo.aposta_minima;
-  const sugestaoLabel = jogo.aposta_padrao ? "Aposta padrão" : "Aposta mínima";
+  const minValue = Number(jogo.aposta_minima || 0);
+  const padraoValue = Number(jogo.aposta_padrao || 0);
+  const maxValue = Number(jogo.aposta_maxima || 0);
+  const minWidth = Math.min(100, Math.max(8, minValue));
+  const padraoWidth = Math.min(100, Math.max(8, padraoValue));
+  const maxWidth = Math.min(100, Math.max(8, maxValue));
 
   return `
     <div class="row">
       <div class="rank">${index + 1}</div>
       ${img}
-      <div>
+      <div class="row-content">
         <div class="name">${jogo.nome}</div>
-        <div class="metrics">
-          <span class="metric ${minClass}">Minima ${formatPercent(jogo.aposta_minima)}</span>
-          <span class="metric ${distClass}">Distrib. ${formatPercent(jogo.distribuicao)}</span>
-          <span class="metric ${avgClass}">Media ${Number(jogo.media || 0).toFixed(1)}%</span>
-          <span class="metric">${sugestaoLabel} ${formatBetValue(apostaPadrao)}</span>
+        <div class="stats-card">
+          <div class="stat-row">
+            <span>Mínima</span>
+            <strong>${formatPercent(minValue)}</strong>
+          </div>
+          <div class="stat-bar"><span class="stat-fill min" style="width:${minWidth}%"></span></div>
+          <div class="stat-row">
+            <span>Padrão</span>
+            <strong>${formatPercent(padraoValue)}</strong>
+          </div>
+          <div class="stat-bar"><span class="stat-fill padrao" style="width:${padraoWidth}%"></span></div>
+          <div class="stat-row">
+            <span>Máxima</span>
+            <strong>${formatPercent(maxValue)}</strong>
+          </div>
+          <div class="stat-bar"><span class="stat-fill max" style="width:${maxWidth}%"></span></div>
+        </div>
+        <div class="range-grid">
+          <div class="range-item">
+            <small>Mínima</small>
+            <strong>${formatBetValue(minValue)}</strong>
+          </div>
+          <div class="range-item">
+            <small>Padrão</small>
+            <strong>${formatBetValue(padraoValue)}</strong>
+          </div>
+          <div class="range-item">
+            <small>Máxima</small>
+            <strong>${formatBetValue(maxValue)}</strong>
+          </div>
         </div>
       </div>
     </div>`;

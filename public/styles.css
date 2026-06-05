@@ -455,7 +455,7 @@ button:disabled {
   display: grid;
   grid-template-columns: 42px 74px minmax(0, 1fr);
   gap: 14px;
-  align-items: center;
+  align-items: start;
   padding: 16px;
   border-radius: 20px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
@@ -466,6 +466,7 @@ button:disabled {
   color: #f7c15f;
   text-align: center;
   font-weight: 900;
+  padding-top: 8px;
 }
 
 .thumb {
@@ -477,36 +478,92 @@ button:disabled {
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+.row-content {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
 .name {
   font-weight: 800;
   color: #ffffff;
   word-break: break-word;
   word-wrap: break-word;
   line-height: 1.2;
+  font-size: 1rem;
 }
 
-.metrics {
-  display: flex;
-  flex-wrap: wrap;
+.stats-card {
+  display: grid;
   gap: 10px;
-  margin-top: 10px;
-  color: #d8deee;
-  font-size: 0.92rem;
-}
-
-.metric {
+  padding: 14px;
   background: rgba(255, 255, 255, 0.05);
-  border-radius: 999px;
-  padding: 6px 12px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  white-space: nowrap;
+  border-radius: 18px;
 }
 
-.metric.high {
-  background: linear-gradient(135deg, #34a853, #1e7b35);
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: #d8deee;
+  font-size: 0.95rem;
+}
+
+.stat-row strong {
   color: #f8f9ff;
-  border-color: rgba(67, 181, 129, 0.35);
-  box-shadow: 0 10px 20px rgba(52, 168, 83, 0.18);
+}
+
+.stat-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  overflow: hidden;
+}
+
+.stat-fill {
+  display: block;
+  height: 100%;
+  border-radius: 999px;
+}
+
+.stat-fill.min {
+  background: linear-gradient(90deg, #f7c15f, #f8d77b);
+}
+
+.stat-fill.padrao {
+  background: linear-gradient(90deg, #f25555, #ff8e5f);
+}
+
+.stat-fill.max {
+  background: linear-gradient(90deg, #4fd6d1, #20b9b0);
+}
+
+.range-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.range-item {
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px;
+  text-align: center;
+}
+
+.range-item small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  margin-bottom: 6px;
+}
+
+.range-item strong {
+  color: #f8f9ff;
+  font-size: 0.95rem;
 }
 
 .empty {
