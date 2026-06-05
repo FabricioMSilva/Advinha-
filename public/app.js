@@ -52,12 +52,28 @@ let currentSite = "fp"; // filtro de site para os cards.
 let currentData = null; // dados atuais carregados da API.
 let platformCards = await loadPlatforms(); // cards da seção de plataformas.
 
+function isValidPlatform(platform) {
+  return (
+    platform &&
+    typeof platform.title === "string" &&
+    platform.title.trim() &&
+    typeof platform.href === "string" &&
+    platform.href.trim() &&
+    typeof platform.img === "string" &&
+    platform.img.trim()
+  );
+}
+
 // Carrega os cards de plataforma salvos no storage ou usa o arquivo de configuração.
 async function loadPlatforms() {
   const stored = localStorage.getItem(PLATFORM_STORAGE_KEY);
   if (stored) {
     try {
-      return JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      if (Array.isArray(parsed) && parsed.every(isValidPlatform)) {
+        return parsed;
+      }
+      localStorage.removeItem(PLATFORM_STORAGE_KEY);
     } catch {
       // Se o JSON estiver corrompido, apaga o valor salvo e usa os padrões.
       localStorage.removeItem(PLATFORM_STORAGE_KEY);
@@ -68,7 +84,7 @@ async function loadPlatforms() {
     const response = await fetch("/platforms.json", { cache: "no-store" });
     if (response.ok) {
       const platforms = await response.json();
-      if (Array.isArray(platforms)) return platforms;
+      if (Array.isArray(platforms) && platforms.every(isValidPlatform)) return platforms;
     }
   } catch {
     // Falha no fetch, cai para o padrão embutido.
