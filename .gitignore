@@ -1,4 +1,15 @@
 # Local Netlify folder
-.netlify
-node_modules
-node_modules
+.netlify/
+
+# Node modules
+node_modules/
+
+# Logs
+*.log
+
+# Python environment and cache
+.venv/
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
