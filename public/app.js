@@ -123,6 +123,14 @@ function formatPercent(value) {
   return `${Math.round(Number(value || 0))}%`;
 }
 
+function formatCurrency(value) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+    maximumFractionDigits: 0,
+  }).format(Number(value || 0));
+}
+
 function renderRow(jogo, index) {
   const img = jogo.imagem_url
     ? `<img class="thumb" src="${jogo.imagem_url}" alt="${jogo.nome}" loading="lazy">`
@@ -131,6 +139,8 @@ function renderRow(jogo, index) {
   const minClass = getMetricClass(jogo.aposta_minima);
   const distClass = getMetricClass(jogo.distribuicao);
   const avgClass = getMetricClass(jogo.media);
+  const apostaPadrao = jogo.aposta_padrao || jogo.aposta_minima;
+  const sugestaoLabel = jogo.aposta_padrao ? "Aposta" : "Mínima";
 
   return `
     <div class="row">
@@ -142,6 +152,7 @@ function renderRow(jogo, index) {
           <span class="metric ${minClass}">Minima ${formatPercent(jogo.aposta_minima)}</span>
           <span class="metric ${distClass}">Distrib. ${formatPercent(jogo.distribuicao)}</span>
           <span class="metric ${avgClass}">Media ${Number(jogo.media || 0).toFixed(1)}%</span>
+          <span class="metric">${sugestaoLabel} ${formatCurrency(apostaPadrao)}</span>
         </div>
       </div>
     </div>`;
@@ -156,16 +167,19 @@ function render(data) {
   const rainhaTop = getTopByFilter(data.porSite?.["Rainha do Slot"] || []);
   const fpTop = getTopByFilter(data.porSite?.["Grupo FP Sinais"] || []);
 
+  const rainhaAposta = rainhaTop ? formatCurrency(rainhaTop.aposta_padrao || rainhaTop.aposta_minima) : null;
+  const fpAposta = fpTop ? formatCurrency(fpTop.aposta_padrao || fpTop.aposta_minima) : null;
+
   bestRainhaEl.textContent = rainhaTop
     ? `${rainhaTop.nome} - minima ${formatPercent(rainhaTop.aposta_minima)} | distribuicao ${formatPercent(
         rainhaTop.distribuicao
-      )} | media ${Number(rainhaTop.media).toFixed(1)}%`
+      )} | media ${Number(rainhaTop.media).toFixed(1)}% | aposta ${rainhaAposta}`
     : "Nenhum jogo encontrado.";
 
   bestFpEl.textContent = fpTop
     ? `${fpTop.nome} - minima ${formatPercent(fpTop.aposta_minima)} | distribuicao ${formatPercent(
         fpTop.distribuicao
-      )} | media ${Number(fpTop.media).toFixed(1)}%`
+      )} | media ${Number(fpTop.media).toFixed(1)}% | aposta ${fpAposta}`
     : "Nenhum jogo encontrado.";
 
   updateFilterButtons();
