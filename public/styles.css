@@ -328,59 +328,74 @@ button:disabled {
 }
 
 .carousel-container {
-  display: none;
-  align-items: center;
-  gap: 12px;
+  display: block;
 }
 
 .carousel-wrapper {
-  flex: 1;
-  overflow-x: auto;
-  scroll-behavior: smooth;
-  -webkit-overflow-scrolling: touch;
-}
-
-.carousel-wrapper::-webkit-scrollbar {
-  height: 4px;
-}
-
-.carousel-wrapper::-webkit-scrollbar-track {
-  background: rgba(255, 255, 255, 0.05);
-  border-radius: 10px;
-}
-
-.carousel-wrapper::-webkit-scrollbar-thumb {
-  background: rgba(242, 169, 37, 0.3);
-  border-radius: 10px;
-}
-
-.carousel-wrapper::-webkit-scrollbar-thumb:hover {
-  background: rgba(242, 169, 37, 0.5);
+  display: block;
 }
 
 .carousel-btn {
-  flex-shrink: 0;
-  width: 40px;
-  height: 40px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.06);
-  color: #f8f9ff;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: all 0.2s ease;
+  display: none;
 }
 
-.carousel-btn:hover {
-  background: rgba(242, 169, 37, 0.2);
-  border-color: rgba(242, 169, 37, 0.35);
-}
+@media (max-width: 480px) {
+  .carousel-container {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
 
-.carousel-btn:active {
-  transform: scale(0.95);
+  .carousel-wrapper {
+    display: flex;
+    flex: 1;
+    overflow-x: auto;
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .carousel-wrapper::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .carousel-wrapper::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  .carousel-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(242, 169, 37, 0.3);
+    border-radius: 10px;
+  }
+
+  .carousel-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(242, 169, 37, 0.5);
+  }
+
+  .carousel-btn {
+    display: flex;
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.06);
+    color: #f8f9ff;
+    font-size: 1.5rem;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .carousel-btn:hover {
+    background: rgba(242, 169, 37, 0.2);
+    border-color: rgba(242, 169, 37, 0.35);
+  }
+
+  .carousel-btn:active {
+    transform: scale(0.95);
+  }
 }
 
 .platform-card {
