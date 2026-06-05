@@ -12,6 +12,6 @@
     "@netlify/functions": "^4.2.5"
   },
   "devDependencies": {
-    "netlify-cli": "^22.1.3"
+    "netlify-cli": "^26.1.0"
   }
 }
