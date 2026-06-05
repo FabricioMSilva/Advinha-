@@ -16,10 +16,8 @@ const REFRESH_MS = 120_000;
 
 // Elementos de interface usados para atualizar texto e estado.
 const statusEl = document.querySelector("#status");
-const bestRainhaEl = document.querySelector("#bestRainha");
-const bestFpEl = document.querySelector("#bestFp");
 const refreshBtn = document.querySelector("#refresh");
-const loginBtn = document.querySelector("#loginBtn");
+const scrollTopBtn = document.querySelector("#scrollTopBtn");
 const modal = document.querySelector("#editorModal");
 const loginScreen = document.querySelector("#loginScreen");
 const editorScreen = document.querySelector("#editorScreen");
@@ -37,6 +35,9 @@ const lists = {
 };
 
 const filterButtons = document.querySelectorAll(".filter-btn");
+const siteFilterButtons = document.querySelectorAll(".site-filter-btn");
+const rainhaPanel = document.querySelector("#rainhaPanel");
+const fpPanel = document.querySelector("#fpPanel");
 
 // Chaves de armazenamento e senha do modo administrador.
 const PLATFORM_STORAGE_KEY = "fbr-platform-cards";
@@ -47,11 +48,12 @@ let loading = false; // impede atualizações concorrentes.
 let nextRefreshAt = null; // próximo tempo de atualização automática.
 let adminMode = false; // flag para exibir editor de cards.
 let currentFilter = "distribuicao"; // filtro de ordenação ativo.
+let currentSite = "fp"; // filtro de site para os cards.
 let currentData = null; // dados atuais carregados da API.
-let platformCards = loadPlatforms(); // cards da seção de plataformas.
+let platformCards = await loadPlatforms(); // cards da seção de plataformas.
 
-// Carrega os cards de plataforma salvos no storage ou usa valores padrão.
-function loadPlatforms() {
+// Carrega os cards de plataforma salvos no storage ou usa o arquivo de configuração.
+async function loadPlatforms() {
   const stored = localStorage.getItem(PLATFORM_STORAGE_KEY);
   if (stored) {
     try {
@@ -62,7 +64,17 @@ function loadPlatforms() {
     }
   }
 
-  // Cards padrão exibidos quando não existe nada salvo.
+  try {
+    const response = await fetch("/platforms.json", { cache: "no-store" });
+    if (response.ok) {
+      const platforms = await response.json();
+      if (Array.isArray(platforms)) return platforms;
+    }
+  } catch {
+    // Falha no fetch, cai para o padrão embutido.
+  }
+
+  // Cards padrão exibidos quando não existe nada salvo e o arquivo não pôde ser carregado.
   return [
     { title: "Plataforma 1", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+1" },
     { title: "Plataforma 2", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+2" },
@@ -76,7 +88,7 @@ function savePlatformsToStorage() {
   localStorage.setItem(PLATFORM_STORAGE_KEY, JSON.stringify(platformCards));
 }
 
-// Renderiza os cards de plataforma dentro do grid fixo.
+// Renderiza os cards de plataforma em grade simples.
 function renderPlatformCards() {
   const container = document.querySelector(".platform-grid");
   container.innerHTML = platformCards
@@ -213,27 +225,8 @@ function render(data) {
   currentData = data;
 
   // Computa os melhores jogos por cada site usando o filtro atual.
-  const rainhaTop = getTopByFilter(data.porSite?.["Rainha do Slot"] || []);
-  const fpTop = getTopByFilter(data.porSite?.["Grupo FP Sinais"] || []);
-
-  const rainhaAposta = rainhaTop ? formatBetValue(rainhaTop.aposta_padrao || rainhaTop.aposta_minima) : null;
-  const fpAposta = fpTop ? formatBetValue(fpTop.aposta_padrao || fpTop.aposta_minima) : null;
-
-  // Atualiza o card de melhor jogo da Rainha.
-  bestRainhaEl.textContent = rainhaTop
-    ? `${rainhaTop.nome} - minima ${formatPercent(rainhaTop.aposta_minima)} | distribuicao ${formatPercent(
-        rainhaTop.distribuicao
-      )} | media ${Number(rainhaTop.media).toFixed(1)}% | aposta ${rainhaAposta}`
-    : "Nenhum jogo encontrado.";
-
-  // Atualiza o card de melhor jogo do FP.
-  bestFpEl.textContent = fpTop
-    ? `${fpTop.nome} - minima ${formatPercent(fpTop.aposta_minima)} | distribuicao ${formatPercent(
-        fpTop.distribuicao
-      )} | media ${Number(fpTop.media).toFixed(1)}% | aposta ${fpAposta}`
-    : "Nenhum jogo encontrado.";
-
   updateFilterButtons();
+  updateSiteFilterButtons();
   renderGames();
 }
 
@@ -256,8 +249,8 @@ function renderGames() {
 // Ordena os jogos de forma decrescente de acordo com o filtro atual.
 function sortGamesByFilter(jogos) {
   return [...jogos].sort((a, b) => {
-    const aValue = Number(a[currentFilter] ?? 0);
-    const bValue = Number(b[currentFilter] ?? 0);
+    const aValue = Number(a[currentFilter] ?? 0) || 0;
+    const bValue = Number(b[currentFilter] ?? 0) || 0;
     if (aValue < bValue) return 1;
     if (aValue > bValue) return -1;
     return 0;
@@ -269,6 +262,23 @@ function updateFilterButtons() {
   filterButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === currentFilter);
   });
+}
+
+function updateSiteFilterButtons() {
+  siteFilterButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.site === currentSite);
+  });
+
+  if (currentSite === "rainha") {
+    rainhaPanel.classList.remove("hidden");
+    fpPanel.classList.add("hidden");
+  } else if (currentSite === "fp") {
+    rainhaPanel.classList.add("hidden");
+    fpPanel.classList.remove("hidden");
+  } else {
+    rainhaPanel.classList.remove("hidden");
+    fpPanel.classList.remove("hidden");
+  }
 }
 
 // Requisição de atualização de dados para o endpoint Netlify.
@@ -308,15 +318,6 @@ function tick() {
 }
 
 // Event listeners que ligam ações do usuário às funções.
-loginBtn.addEventListener("click", () => {
-  if (adminMode) {
-    openModal("editor");
-    buildEditor();
-  } else {
-    openModal("login");
-  }
-});
-
 submitLogin.addEventListener("click", attemptLogin);
 loginPassword.addEventListener("keydown", (event) => {
   if (event.key === "Enter") attemptLogin();
@@ -336,28 +337,27 @@ filterButtons.forEach((button) => {
   });
 });
 
+siteFilterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    const selectedSite = button.dataset.site;
+    currentSite = currentSite === selectedSite ? "all" : selectedSite;
+    updateSiteFilterButtons();
+    renderGames();
+  });
+});
+
 // Atualização manual por clique e atualização automática periódica.
 refreshBtn.addEventListener("click", atualizar);
+scrollTopBtn?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
+window.addEventListener("scroll", () => {
+  if (!scrollTopBtn) return;
+  scrollTopBtn.classList.toggle("hidden", window.pageYOffset < 280);
+});
+
 setInterval(atualizar, REFRESH_MS);
 setInterval(tick, 1000);
 
-// ===== Carrossel de cards de plataforma (apenas em mobile) =====
-const carouselWrapper = document.querySelector(".carousel-wrapper");
-const carouselPrev = document.querySelector("#carouselPrev");
-const carouselNext = document.querySelector("#carouselNext");
-
-if (carouselPrev && carouselNext && carouselWrapper) {
-  const scrollAmount = 200;
-
-  carouselPrev.addEventListener("click", () => {
-    carouselWrapper.scrollBy({ left: -scrollAmount, behavior: "smooth" });
-  });
-
-  carouselNext.addEventListener("click", () => {
-    carouselWrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
-  });
-}
-
 renderPlatformCards();
+updateSiteFilterButtons();
 updateFilterButtons();
 atualizar();

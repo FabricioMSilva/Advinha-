@@ -15,7 +15,8 @@ Site de monitoramento de apostas com interface responsiva, editor de cards de pl
 
 1. Abra `public/index.html` no navegador para ver a interface estática.
 2. Para editar os cards de parceiros, clique em `Login` e use a senha de administrador.
-3. O conteúdo do editor é salvo localmente no `localStorage` do navegador.
+3. Os cards padrão também podem ser alterados em `public/platforms.json`.
+4. O conteúdo do editor é salvo localmente no `localStorage` do navegador.
 
 ## Configuração local
 

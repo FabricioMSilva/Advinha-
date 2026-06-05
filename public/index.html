@@ -14,7 +14,6 @@
           <p id="status">Preparando primeira atualizacao...</p>
         </div>
         <div class="topbar-actions">
-          <button id="loginBtn" type="button">Login</button>
           <button id="refresh" type="button">Atualizar agora</button>
         </div>
       </header>
@@ -22,26 +21,17 @@
       <section class="platforms">
         <div class="platforms-header">
           <span>Plataformas Parceiras</span>
-          <p>Use o login para editar links e imagens dos cards.</p>
+          <p>Use essas plataformas para jogar com sinais a baixo.</p>
         </div>
-        <div class="carousel-container">
-          <button id="carouselPrev" class="carousel-btn carousel-prev" type="button" aria-label="Anterior">‹</button>
-          <div class="carousel-wrapper">
-            <div class="platform-grid"></div>
-          </div>
-          <button id="carouselNext" class="carousel-btn carousel-next" type="button" aria-label="Próximo">›</button>
-        </div>
+        <div class="platform-grid"></div>
       </section>
 
-      <section class="best-row">
-        <article class="best-card">
-          <span>Melhor da Rainha</span>
-          <div id="bestRainha" class="best-game">Carregando melhor Rainha...</div>
-        </article>
-        <article class="best-card">
-          <span>Melhor do FP</span>
-          <div id="bestFp" class="best-game">Carregando melhor FP...</div>
-        </article>
+      <section class="site-filter">
+        <span>Mostrar sinais:</span>
+        <div class="site-filter-buttons">
+          <button class="site-filter-btn" data-site="rainha" type="button">Rainha</button>
+          <button class="site-filter-btn active" data-site="fp" type="button">FP</button>
+        </div>
       </section>
 
       <div id="editorModal" class="modal hidden">
@@ -80,17 +70,20 @@
       </section>
 
       <section class="grid">
-        <article class="panel">
+        <article id="rainhaPanel" class="panel">
           <h2>Melhor da Rainha</h2>
           <div id="rainhaList" class="list"></div>
         </article>
-        <article class="panel">
+        <article id="fpPanel" class="panel">
           <h2>Melhor do FP</h2>
           <div id="fpList" class="list"></div>
         </article>
       </section>
     </main>
 
+    <button id="scrollTopBtn" class="scroll-top hidden" type="button" aria-label="Voltar ao topo">
+      ↑
+    </button>
     <script src="/app.js" type="module"></script>
   </body>
 </html>

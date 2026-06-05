@@ -29,7 +29,7 @@ export default async function handler() {
 
     const jogos = resultados.flat();
     const porSite = Object.fromEntries(
-      SITES.map((site) => [site.nome, melhores(jogos.filter((jogo) => jogo.site === site.nome), 10)])
+      SITES.map((site) => [site.nome, melhores(jogos.filter((jogo) => jogo.site === site.nome), 25)])
     );
 
     return Response.json({
