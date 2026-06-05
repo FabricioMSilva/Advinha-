@@ -495,45 +495,61 @@ button:disabled {
 
   .row {
     display: grid;
-    grid-template-columns: 70px 1fr;
-    gap: 16px;
-    padding: 16px;
+    grid-template-columns: 85px 1fr;
+    grid-template-rows: auto auto;
+    gap: 12px;
+    padding: 14px;
     align-items: start;
   }
 
   .rank {
     grid-column: 1;
-    grid-row: 1 / 3;
-    padding-top: 8px;
+    grid-row: 1;
+    font-size: 1.4rem;
+    font-weight: 900;
+    color: #f7c15f;
+    text-align: center;
+    padding: 4px;
   }
 
   .thumb {
-    width: 70px;
-    height: 70px;
     grid-column: 1;
+    grid-row: 2;
+    width: 100%;
+    height: 85px;
+    border-radius: 12px;
+  }
+
+  .row > div:last-child {
+    grid-column: 2;
     grid-row: 1 / 3;
-    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
   }
 
   .name {
-    grid-column: 2;
-    grid-row: 1;
-    font-size: 1rem;
-    line-height: 1.3;
+    font-size: 1.05rem;
+    font-weight: 700;
+    line-height: 1.2;
+    word-break: break-word;
     margin-bottom: 8px;
   }
 
   .metrics {
-    grid-column: 2;
-    grid-row: 2;
-    font-size: 0.88rem;
-    gap: 8px;
+    display: flex;
+    flex-wrap: wrap;
+    font-size: 0.8rem;
+    gap: 6px;
     margin-top: 0;
   }
 
   .metric {
-    padding: 6px 10px;
-    font-size: 0.85rem;
+    background: rgba(255, 255, 255, 0.06);
+    padding: 5px 8px;
+    font-size: 0.75rem;
+    border-radius: 12px;
+    white-space: nowrap;
   }
 
   .shell {
