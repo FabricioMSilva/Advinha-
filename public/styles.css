@@ -437,13 +437,15 @@ button:disabled {
 
 .grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(2, minmax(0, 560px));
   gap: 22px;
+  justify-content: center;
 }
 
 .panel {
-  padding: 26px;
+  padding: 22px;
   min-width: 0;
+  max-width: 560px;
 }
 
 .list {
@@ -456,7 +458,7 @@ button:disabled {
   grid-template-columns: 42px 74px minmax(0, 1fr);
   gap: 14px;
   align-items: start;
-  padding: 16px;
+  padding: 14px;
   border-radius: 20px;
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.01));
   border: 1px solid rgba(255, 255, 255, 0.08);
@@ -481,7 +483,7 @@ button:disabled {
 .row-content {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 10px;
 }
 
 .name {
@@ -495,8 +497,8 @@ button:disabled {
 
 .stats-card {
   display: grid;
-  gap: 10px;
-  padding: 14px;
+  gap: 8px;
+  padding: 12px;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 18px;
@@ -543,7 +545,7 @@ button:disabled {
 .range-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .range-item {
