@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>FBR Sinais de Jogos</title>
+    <link rel="stylesheet" href="/styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <header class="topbar">
+        <div>
+          <h1>FBR Sinais de Jogos</h1>
+          <p id="status">Preparando primeira atualizacao...</p>
+        </div>
+        <div class="topbar-actions">
+          <button id="loginBtn" type="button">Login</button>
+          <button id="refresh" type="button">Atualizar agora</button>
+        </div>
+      </header>
+
+      <section class="platforms">
+        <div class="platforms-header">
+          <span>Plataformas Parceiras</span>
+          <p>Use o login para editar links e imagens dos cards.</p>
+        </div>
+        <div class="platform-grid"></div>
+      </section>
+
+      <section class="best-row">
+        <article class="best-card">
+          <span>Melhor da Rainha</span>
+          <div id="bestRainha" class="best-game">Carregando melhor Rainha...</div>
+        </article>
+        <article class="best-card">
+          <span>Melhor do FP</span>
+          <div id="bestFp" class="best-game">Carregando melhor FP...</div>
+        </article>
+      </section>
+
+      <div id="editorModal" class="modal hidden">
+        <div class="modal-dialog">
+          <button id="closeModal" class="modal-close" type="button">×</button>
+          <div id="loginScreen" class="modal-page">
+            <h3>Login de administrador</h3>
+            <p>Digite a senha para liberar a edição dos cards.</p>
+            <input id="loginPassword" type="password" placeholder="Senha" aria-label="Senha" />
+            <button id="submitLogin" type="button">Entrar</button>
+            <p class="modal-note">Senha editável em <code>public/app.js</code>.</p>
+            <p id="loginError" class="modal-error hidden">Senha incorreta. Tente novamente.</p>
+          </div>
+
+          <div id="editorScreen" class="modal-page hidden">
+            <h3>Editar plataformas</h3>
+            <div id="platformEditor" class="platform-editor"></div>
+            <div class="editor-actions">
+              <button id="savePlatforms" type="button">Salvar alterações</button>
+              <button id="cancelEdit" type="button" class="button-secondary">Cancelar</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <section class="grid">
+        <article class="panel">
+          <h2>Melhor da Rainha</h2>
+          <div id="rainhaList" class="list"></div>
+        </article>
+        <article class="panel">
+          <h2>Melhor do FP</h2>
+          <div id="fpList" class="list"></div>
+        </article>
+      </section>
+    </main>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

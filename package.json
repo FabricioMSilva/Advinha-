@@ -1,0 +1,17 @@
+{
+  "name": "monitoramento-do-tigre-web",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo \"Static site ready\""
+  },
+  "dependencies": {
+    "cheerio": "^1.0.0",
+    "@netlify/functions": "^4.2.5"
+  },
+  "devDependencies": {
+    "netlify-cli": "^22.1.3"
+  }
+}
