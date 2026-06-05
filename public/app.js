@@ -1,4 +1,20 @@
+/*
+  public/app.js
+
+  Este arquivo controla a lógica de renderização e atualização do dashboard.
+  Principais responsabilidades:
+    1. Estado global e seleção de elementos HTML
+    2. Carregamento e salvamento de cards da plataforma
+    3. Renderização dos cards de plataforma e lista de jogos
+    4. Filtros de ordenação e atualização automática
+    5. Modal de administrador para editar cards
+*/
+
+// === CONFIGURAÇÕES E SELETORES PRINCIPAIS ===
+// Tempo de atualização automática em milissegundos (2 minutos).
 const REFRESH_MS = 120_000;
+
+// Elementos de interface usados para atualizar texto e estado.
 const statusEl = document.querySelector("#status");
 const bestRainhaEl = document.querySelector("#bestRainha");
 const bestFpEl = document.querySelector("#bestFp");
@@ -13,32 +29,40 @@ const loginError = document.querySelector("#loginError");
 const platformEditor = document.querySelector("#platformEditor");
 const savePlatforms = document.querySelector("#savePlatforms");
 const cancelEdit = document.querySelector("#cancelEdit");
+
+// Referências para as duas listas de jogos exibidas na página.
 const lists = {
   "Rainha do Slot": document.querySelector("#rainhaList"),
   "Grupo FP Sinais": document.querySelector("#fpList"),
 };
+
 const filterButtons = document.querySelectorAll(".filter-btn");
 
+// Chaves de armazenamento e senha do modo administrador.
 const PLATFORM_STORAGE_KEY = "fbr-platform-cards";
 const ADMIN_PASSWORD = "Carol2018*";
 
-let loading = false;
-let nextRefreshAt = null;
-let adminMode = false;
-let currentFilter = "distribuicao";
-let currentData = null;
-let platformCards = loadPlatforms();
+// Estado global do aplicativo.
+let loading = false; // impede atualizações concorrentes.
+let nextRefreshAt = null; // próximo tempo de atualização automática.
+let adminMode = false; // flag para exibir editor de cards.
+let currentFilter = "distribuicao"; // filtro de ordenação ativo.
+let currentData = null; // dados atuais carregados da API.
+let platformCards = loadPlatforms(); // cards da seção de plataformas.
 
+// Carrega os cards de plataforma salvos no storage ou usa valores padrão.
 function loadPlatforms() {
   const stored = localStorage.getItem(PLATFORM_STORAGE_KEY);
   if (stored) {
     try {
       return JSON.parse(stored);
     } catch {
+      // Se o JSON estiver corrompido, apaga o valor salvo e usa os padrões.
       localStorage.removeItem(PLATFORM_STORAGE_KEY);
     }
   }
 
+  // Cards padrão exibidos quando não existe nada salvo.
   return [
     { title: "Plataforma 1", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+1" },
     { title: "Plataforma 2", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+2" },
@@ -47,10 +71,12 @@ function loadPlatforms() {
   ];
 }
 
+// Salva o array de cards de plataforma no localStorage para manter as mudanças entre sessões.
 function savePlatformsToStorage() {
   localStorage.setItem(PLATFORM_STORAGE_KEY, JSON.stringify(platformCards));
 }
 
+// Renderiza os cards de plataforma dentro do grid fixo.
 function renderPlatformCards() {
   const container = document.querySelector(".platform-grid");
   container.innerHTML = platformCards
@@ -66,6 +92,7 @@ function renderPlatformCards() {
     .join("");
 }
 
+// Abre o modal e escolhe qual tela exibir: login ou editor.
 function openModal(screen) {
   modal.classList.remove("hidden");
   loginScreen.classList.toggle("hidden", screen !== "login");
@@ -76,10 +103,12 @@ function openModal(screen) {
   }
 }
 
+// Fecha o modal independente da tela interna atual.
 function closeModal() {
   modal.classList.add("hidden");
 }
 
+// Constrói os campos do editor com os dados atuais dos cards de plataforma.
 function buildEditor() {
   platformEditor.innerHTML = platformCards
     .map(
@@ -96,6 +125,7 @@ function buildEditor() {
     .join("");
 }
 
+// Tenta autenticar o administrador usando a senha fixa definida em ADMIN_PASSWORD.
 function attemptLogin() {
   if (loginPassword.value === ADMIN_PASSWORD) {
     adminMode = true;
@@ -106,6 +136,7 @@ function attemptLogin() {
   }
 }
 
+// Salva as alterações feitas no editor convertendo os campos em objetos de carta.
 function saveEditor() {
   const cards = Array.from(platformEditor.querySelectorAll(".platform-editor-card"));
   platformCards = cards.map((card) => {
@@ -129,23 +160,26 @@ function formatBetValue(value) {
   return number.toString().replace(/\.0$/, "");
 }
 
+// Renderiza um único card de jogo, incluindo imagem de fundo, distribuição e barras de valor.
 function renderRow(jogo, index) {
-  const img = jogo.imagem_url
-    ? `<img class="thumb" src="${jogo.imagem_url}" alt="${jogo.nome}" loading="lazy">`
-    : `<div class="thumb"></div>`;
-
+  const distributionValue = Number(jogo.distribuicao || 0);
   const minValue = Number(jogo.aposta_minima || 0);
   const padraoValue = Number(jogo.aposta_padrao || 0);
   const maxValue = Number(jogo.aposta_maxima || 0);
+
+  // Garantir que a largura da barra fique entre 8% e 100%.
   const minWidth = Math.min(100, Math.max(8, minValue));
   const padraoWidth = Math.min(100, Math.max(8, padraoValue));
   const maxWidth = Math.min(100, Math.max(8, maxValue));
+  const backgroundImage = jogo.imagem_url ? `url('${jogo.imagem_url}')` : "none";
 
   return `
-    <div class="row">
-      <div class="rank">${index + 1}</div>
-      ${img}
+    <div class="row" style="--row-image: ${backgroundImage}">
       <div class="row-content">
+        <div class="rank">
+          <span>Dist.</span>
+          <strong>${formatPercent(distributionValue)}</strong>
+        </div>
         <div class="name">${jogo.nome}</div>
         <div class="stats-card">
           <div class="stat-row">
@@ -164,42 +198,35 @@ function renderRow(jogo, index) {
           </div>
           <div class="stat-bar"><span class="stat-fill max" style="width:${maxWidth}%"></span></div>
         </div>
-        <div class="range-grid">
-          <div class="range-item">
-            <small>Mínima</small>
-            <strong>${formatBetValue(minValue)}</strong>
-          </div>
-          <div class="range-item">
-            <small>Padrão</small>
-            <strong>${formatBetValue(padraoValue)}</strong>
-          </div>
-          <div class="range-item">
-            <small>Máxima</small>
-            <strong>${formatBetValue(maxValue)}</strong>
-          </div>
-        </div>
       </div>
     </div>`;
 }
 
+// Função auxiliar para aplicar classe extra em métricas muito altas.
+// Atualmente não usada diretamente, mas pode servir para destacar valores > 97.
 function getMetricClass(value) {
   return Number(value) > 97 ? "high" : "";
 }
 
+// Atualiza os textos e listas principais após receber dados da API.
 function render(data) {
   currentData = data;
+
+  // Computa os melhores jogos por cada site usando o filtro atual.
   const rainhaTop = getTopByFilter(data.porSite?.["Rainha do Slot"] || []);
   const fpTop = getTopByFilter(data.porSite?.["Grupo FP Sinais"] || []);
 
   const rainhaAposta = rainhaTop ? formatBetValue(rainhaTop.aposta_padrao || rainhaTop.aposta_minima) : null;
   const fpAposta = fpTop ? formatBetValue(fpTop.aposta_padrao || fpTop.aposta_minima) : null;
 
+  // Atualiza o card de melhor jogo da Rainha.
   bestRainhaEl.textContent = rainhaTop
     ? `${rainhaTop.nome} - minima ${formatPercent(rainhaTop.aposta_minima)} | distribuicao ${formatPercent(
         rainhaTop.distribuicao
       )} | media ${Number(rainhaTop.media).toFixed(1)}% | aposta ${rainhaAposta}`
     : "Nenhum jogo encontrado.";
 
+  // Atualiza o card de melhor jogo do FP.
   bestFpEl.textContent = fpTop
     ? `${fpTop.nome} - minima ${formatPercent(fpTop.aposta_minima)} | distribuicao ${formatPercent(
         fpTop.distribuicao
@@ -210,10 +237,12 @@ function render(data) {
   renderGames();
 }
 
+// Retorna o jogo de maior valor com base no filtro atual.
 function getTopByFilter(jogos) {
   return sortGamesByFilter(jogos)[0] || null;
 }
 
+// Renderiza todas as listas de jogos na página, uma por site.
 function renderGames() {
   if (!currentData) return;
 
@@ -224,6 +253,7 @@ function renderGames() {
   }
 }
 
+// Ordena os jogos de forma decrescente de acordo com o filtro atual.
 function sortGamesByFilter(jogos) {
   return [...jogos].sort((a, b) => {
     const aValue = Number(a[currentFilter] ?? 0);
@@ -234,12 +264,15 @@ function sortGamesByFilter(jogos) {
   });
 }
 
+// Atualiza o botão ativo conforme o filtro selecionado.
 function updateFilterButtons() {
   filterButtons.forEach((button) => {
     button.classList.toggle("active", button.dataset.filter === currentFilter);
   });
 }
 
+// Requisição de atualização de dados para o endpoint Netlify.
+// Controle de estado garante que não haja duas atualizações ao mesmo tempo.
 async function atualizar() {
   if (loading) return;
   loading = true;
@@ -263,6 +296,7 @@ async function atualizar() {
   }
 }
 
+// Atualiza o contador exibido no status para mostrar o tempo restante até a próxima atualização.
 function tick() {
   if (nextRefreshAt && !loading) {
     const rest = Math.max(0, Math.floor((nextRefreshAt - Date.now()) / 1000));
@@ -273,6 +307,7 @@ function tick() {
   }
 }
 
+// Event listeners que ligam ações do usuário às funções.
 loginBtn.addEventListener("click", () => {
   if (adminMode) {
     openModal("editor");
@@ -292,6 +327,7 @@ cancelEdit.addEventListener("click", closeModal);
 
 document.querySelector("#closeModal").addEventListener("click", closeModal);
 
+// Adiciona comportamento aos botões de filtro: troca o filtro ativo e re-renderiza os jogos.
 filterButtons.forEach((button) => {
   button.addEventListener("click", () => {
     currentFilter = button.dataset.filter;
@@ -300,11 +336,12 @@ filterButtons.forEach((button) => {
   });
 });
 
+// Atualização manual por clique e atualização automática periódica.
 refreshBtn.addEventListener("click", atualizar);
 setInterval(atualizar, REFRESH_MS);
 setInterval(tick, 1000);
 
-// Carousel functionality
+// ===== Carrossel de cards de plataforma (apenas em mobile) =====
 const carouselWrapper = document.querySelector(".carousel-wrapper");
 const carouselPrev = document.querySelector("#carouselPrev");
 const carouselNext = document.querySelector("#carouselNext");
