@@ -92,10 +92,10 @@ async function loadPlatforms() {
 
   // Cards padrão exibidos quando não existe nada salvo e o arquivo não pôde ser carregado.
   return [
-    { title: "Plataforma 1", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+1" },
-    { title: "Plataforma 2", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+2" },
-    { title: "Plataforma 3", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+3" },
-    { title: "Plataforma 4", href: "https://exemplo.com", img: "https://via.placeholder.com/120x120?text=Logo+4" },
+    { title: "Plataforma 1", href: "https://example.com", img: "https://via.placeholder.com/120x120?text=Logo+1" },
+    { title: "Plataforma 2", href: "https://example.com", img: "https://via.placeholder.com/120x120?text=Logo+2" },
+    { title: "Plataforma 3", href: "https://example.com", img: "https://via.placeholder.com/120x120?text=Logo+3" },
+    { title: "Plataforma 4", href: "https://example.com", img: "https://via.placeholder.com/120x120?text=Logo+4" },
   ];
 }
 
