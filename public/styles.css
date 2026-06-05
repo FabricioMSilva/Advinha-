@@ -591,15 +591,15 @@ button:disabled {
   }
 
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
   .best-row {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
   .platform-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(180px, 1fr));
   }
 
   .panel {
@@ -615,6 +615,12 @@ button:disabled {
   .topbar {
     gap: 14px;
     padding: 18px 18px;
+  }
+
+  .grid,
+  .best-row {
+    grid-template-columns: repeat(2, minmax(120px, 1fr));
+    gap: 12px;
   }
 
   .best,
