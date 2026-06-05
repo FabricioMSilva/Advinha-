@@ -187,9 +187,14 @@ function renderGames() {
 }
 
 function sortGamesByFilter(jogos) {
-  const ascendingFilters = new Set(["aposta_minima"]);
-  const direction = ascendingFilters.has(currentFilter) ? 1 : -1;
-  return [...jogos].sort((a, b) => direction * (Number(a[currentFilter] || 0) - Number(b[currentFilter] || 0)));
+  const ascending = currentFilter === "aposta_minima";
+  return [...jogos].sort((a, b) => {
+    const aValue = Number(a[currentFilter] ?? 0);
+    const bValue = Number(b[currentFilter] ?? 0);
+    if (aValue < bValue) return ascending ? -1 : 1;
+    if (aValue > bValue) return ascending ? 1 : -1;
+    return 0;
+  });
 }
 
 function updateFilterButtons() {
