@@ -17,6 +17,7 @@ const lists = {
   "Rainha do Slot": document.querySelector("#rainhaList"),
   "Grupo FP Sinais": document.querySelector("#fpList"),
 };
+const filterButtons = document.querySelectorAll(".filter-btn");
 
 const PLATFORM_STORAGE_KEY = "fbr-platform-cards";
 const ADMIN_PASSWORD = "Carol2018*";
@@ -24,6 +25,8 @@ const ADMIN_PASSWORD = "Carol2018*";
 let loading = false;
 let nextRefreshAt = null;
 let adminMode = false;
+let currentFilter = "distribuicao";
+let currentData = null;
 let platformCards = loadPlatforms();
 
 function loadPlatforms() {
@@ -149,25 +152,50 @@ function getMetricClass(value) {
 }
 
 function render(data) {
-  const rainhaMelhor = data.porSite?.["Rainha do Slot"]?.[0];
-  const fpMelhor = data.porSite?.["Grupo FP Sinais"]?.[0];
+  currentData = data;
+  const rainhaTop = getTopByFilter(data.porSite?.["Rainha do Slot"] || []);
+  const fpTop = getTopByFilter(data.porSite?.["Grupo FP Sinais"] || []);
 
-  bestRainhaEl.textContent = rainhaMelhor
-    ? `${rainhaMelhor.nome} - minima ${formatPercent(rainhaMelhor.aposta_minima)} | distribuicao ${formatPercent(
-        rainhaMelhor.distribuicao
-      )} | media ${Number(rainhaMelhor.media).toFixed(1)}%`
+  bestRainhaEl.textContent = rainhaTop
+    ? `${rainhaTop.nome} - minima ${formatPercent(rainhaTop.aposta_minima)} | distribuicao ${formatPercent(
+        rainhaTop.distribuicao
+      )} | media ${Number(rainhaTop.media).toFixed(1)}%`
     : "Nenhum jogo encontrado.";
 
-  bestFpEl.textContent = fpMelhor
-    ? `${fpMelhor.nome} - minima ${formatPercent(fpMelhor.aposta_minima)} | distribuicao ${formatPercent(
-        fpMelhor.distribuicao
-      )} | media ${Number(fpMelhor.media).toFixed(1)}%`
+  bestFpEl.textContent = fpTop
+    ? `${fpTop.nome} - minima ${formatPercent(fpTop.aposta_minima)} | distribuicao ${formatPercent(
+        fpTop.distribuicao
+      )} | media ${Number(fpTop.media).toFixed(1)}%`
     : "Nenhum jogo encontrado.";
+
+  updateFilterButtons();
+  renderGames();
+}
+
+function getTopByFilter(jogos) {
+  return sortGamesByFilter(jogos)[0] || null;
+}
+
+function renderGames() {
+  if (!currentData) return;
 
   for (const [site, el] of Object.entries(lists)) {
-    const jogos = data.porSite?.[site] || [];
-    el.innerHTML = jogos.length ? jogos.map(renderRow).join("") : `<div class="empty">Nenhum jogo encontrado.</div>`;
+    const jogos = currentData.porSite?.[site] || [];
+    const sortedGames = sortGamesByFilter(jogos);
+    el.innerHTML = sortedGames.length ? sortedGames.map(renderRow).join("") : `<div class="empty">Nenhum jogo encontrado.</div>`;
   }
+}
+
+function sortGamesByFilter(jogos) {
+  const ascendingFilters = new Set(["aposta_minima"]);
+  const direction = ascendingFilters.has(currentFilter) ? 1 : -1;
+  return [...jogos].sort((a, b) => direction * (Number(a[currentFilter] || 0) - Number(b[currentFilter] || 0)));
+}
+
+function updateFilterButtons() {
+  filterButtons.forEach((button) => {
+    button.classList.toggle("active", button.dataset.filter === currentFilter);
+  });
 }
 
 async function atualizar() {
@@ -222,8 +250,35 @@ cancelEdit.addEventListener("click", closeModal);
 
 document.querySelector("#closeModal").addEventListener("click", closeModal);
 
+filterButtons.forEach((button) => {
+  button.addEventListener("click", () => {
+    currentFilter = button.dataset.filter;
+    updateFilterButtons();
+    renderGames();
+  });
+});
+
 refreshBtn.addEventListener("click", atualizar);
 setInterval(atualizar, REFRESH_MS);
 setInterval(tick, 1000);
+
+// Carousel functionality
+const carouselWrapper = document.querySelector(".carousel-wrapper");
+const carouselPrev = document.querySelector("#carouselPrev");
+const carouselNext = document.querySelector("#carouselNext");
+
+if (carouselPrev && carouselNext && carouselWrapper) {
+  const scrollAmount = 200;
+
+  carouselPrev.addEventListener("click", () => {
+    carouselWrapper.scrollBy({ left: -scrollAmount, behavior: "smooth" });
+  });
+
+  carouselNext.addEventListener("click", () => {
+    carouselWrapper.scrollBy({ left: scrollAmount, behavior: "smooth" });
+  });
+}
+
 renderPlatformCards();
+updateFilterButtons();
 atualizar();
