@@ -26,11 +26,37 @@
         <div class="platform-grid"></div>
       </section>
 
-      <section class="site-filter">
-        <span>Mostrar sinais:</span>
-        <div class="site-filter-buttons">
-          <button class="site-filter-btn" data-site="rainha" type="button">Rainha</button>
-          <button class="site-filter-btn active" data-site="fp" type="button">FP</button>
+      <section class="site-filter provider-filter">
+        <span>Fabricante:</span>
+        <div class="provider-filter-wrapper">
+          <select id="providerSelect" aria-label="Selecionar fabricante">
+            <option value="all">Todos</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="sort-buttons-section">
+        <div class="sort-header">
+          <span>Ordenar por (clique em sequência):</span>
+          <button id="resetSort" type="button" class="reset-btn">✕ Limpar</button>
+        </div>
+        <div class="sort-buttons-group">
+          <button class="sort-btn" data-sort="distribuicao" title="Maior distribuição">
+            <span class="sort-label">Distribuição</span>
+            <span class="sort-order hidden"></span>
+          </button>
+          <button class="sort-btn" data-sort="aposta_minima" title="Maior aposta mínima">
+            <span class="sort-label">Mínima</span>
+            <span class="sort-order hidden"></span>
+          </button>
+          <button class="sort-btn" data-sort="aposta_padrao" title="Maior aposta padrão">
+            <span class="sort-label">Padrão</span>
+            <span class="sort-order hidden"></span>
+          </button>
+          <button class="sort-btn" data-sort="aposta_maxima" title="Maior aposta máxima">
+            <span class="sort-label">Máxima</span>
+            <span class="sort-order hidden"></span>
+          </button>
         </div>
       </section>
 
@@ -57,26 +83,10 @@
         </div>
       </div>
 
-      <section class="filters">
-        <div class="filters-header">
-          <span>Ordenar jogos por:</span>
-          <div class="filter-buttons">
-            <button class="filter-btn active" data-filter="distribuicao" type="button">Dist.</button>
-            <button class="filter-btn" data-filter="aposta_minima" type="button">Min.</button>
-            <button class="filter-btn" data-filter="media" type="button">Med.</button>
-            <button class="filter-btn" data-filter="aposta_maxima" type="button">Máx.</button>
-          </div>
-        </div>
-      </section>
-
       <section class="grid">
-        <article id="rainhaPanel" class="panel">
-          <h2>Melhor da Rainha</h2>
-          <div id="rainhaList" class="list"></div>
-        </article>
-        <article id="fpPanel" class="panel">
-          <h2>Melhor do FP</h2>
-          <div id="fpList" class="list"></div>
+        <article class="panel">
+          <h2>Sinais Combinados</h2>
+          <div id="combinedList" class="list"></div>
         </article>
       </section>
     </main>

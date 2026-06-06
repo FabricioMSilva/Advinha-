@@ -28,16 +28,10 @@ const platformEditor = document.querySelector("#platformEditor");
 const savePlatforms = document.querySelector("#savePlatforms");
 const cancelEdit = document.querySelector("#cancelEdit");
 
-// Referências para as duas listas de jogos exibidas na página.
-const lists = {
-  "Rainha do Slot": document.querySelector("#rainhaList"),
-  "Grupo FP Sinais": document.querySelector("#fpList"),
-};
+// Referências para a lista combinada de jogos.
+const combinedList = document.querySelector("#combinedList");
 
-const filterButtons = document.querySelectorAll(".filter-btn");
-const siteFilterButtons = document.querySelectorAll(".site-filter-btn");
-const rainhaPanel = document.querySelector("#rainhaPanel");
-const fpPanel = document.querySelector("#fpPanel");
+const providerSelect = document.querySelector("#providerSelect");
 
 // Chaves de armazenamento e senha do modo administrador.
 const PLATFORM_STORAGE_KEY = "fbr-platform-cards";
@@ -47,10 +41,11 @@ const ADMIN_PASSWORD = "Carol2018*";
 let loading = false; // impede atualizações concorrentes.
 let nextRefreshAt = null; // próximo tempo de atualização automática.
 let adminMode = false; // flag para exibir editor de cards.
-let currentFilter = "distribuicao"; // filtro de ordenação ativo.
-let currentSite = "fp"; // filtro de site para os cards.
+let currentFilter = "distribuicao"; // filtro de ordenação ativo - FIXO em distribuição depois mínima.
+let currentProvider = "all"; // filtro de fabricante para os jogos.
 let currentData = null; // dados atuais carregados da API.
 let platformCards = await loadPlatforms(); // cards da seção de plataformas.
+let sortOrder = []; // rastreia a ordem de cliques dos botões de ordenação (ex: ['distribuicao', 'aposta_minima'])
 
 function isValidPlatform(platform) {
   return (
@@ -188,18 +183,71 @@ function formatBetValue(value) {
   return number.toString().replace(/\.0$/, "");
 }
 
+function normalizeProviderName(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return "unknown";
+  if (normalized.includes("pragmatic")) return "pragmatic";
+  if (/\bpg\b/.test(normalized)) return "pg";
+  if (/\bwg\b/.test(normalized)) return "wg";
+  if (normalized.includes("tada")) return "tada";
+  return normalized.replace(/\s+/g, "-");
+}
+
+function getStatGradient(value) {
+  const normalized = Math.min(100, Math.max(0, Number(value) || 0));
+
+  if (normalized >= 95) {
+    const lightness = 48 + ((normalized - 95) / 5) * 8;
+    return `linear-gradient(90deg, hsl(145, 92%, ${lightness}%), hsl(160, 95%, ${Math.max(42, lightness - 8)}%))`;
+  }
+
+  if (normalized >= 75) {
+    const hue = 45 + ((normalized - 75) / 20) * 14;
+    return `linear-gradient(90deg, hsl(${hue}, 95%, 55%), hsl(${Math.max(32, hue - 9)}, 88%, 46%))`;
+  }
+
+  const lightness = 46 + (normalized / 75) * 8;
+  return `linear-gradient(90deg, hsl(1, 93%, ${Math.min(62, lightness + 6)}%), hsl(10, 85%, ${Math.max(35, lightness - 8)}%))`;
+}
+
+// Função para envolver URLs de imagens em um proxy CORS-amigável
+// Nota: As imagens originais têm bloqueio CORS rigoroso.
+// Os cards aparecem com gradiente bonito como fallback.
+function proxyImageUrl(url) {
+  if (!url) return null;
+  // Graceful degradation - retornar null e deixar apenas o gradiente
+  // (Em produção, seria necessário um proxy server-side para contornar CORS)
+  try {
+    // Corrige URLs sem protocolo (//example.com/path)
+    if (url.startsWith("//")) url = window.location.protocol + url;
+    // Se for URL relativa, converte para absoluta baseada na origem atual
+    if (!/^https?:\/\//i.test(url)) {
+      url = new URL(url, window.location.href).toString();
+    }
+    // Usar proxy serverless para evitar problemas de hotlink/CORS
+    return `/.netlify/functions/image?u=${encodeURIComponent(url)}`;
+  } catch (e) {
+    return null;
+  }
+}
+
 // Renderiza um único card de jogo, incluindo imagem de fundo, distribuição e barras de valor.
+// Agora com indicação da origem (Rainha/FP).
 function renderRow(jogo, index) {
   const distributionValue = Number(jogo.distribuicao || 0);
   const minValue = Number(jogo.aposta_minima || 0);
   const padraoValue = Number(jogo.aposta_padrao || 0);
   const maxValue = Number(jogo.aposta_maxima || 0);
 
+  // Determinar a origem (Rainha ou FP)
+  const origem = jogo.site === "Rainha do Slot" ? "análise de Rainha" : "análise de FP";
+
   // Garantir que a largura da barra fique entre 8% e 100%.
   const minWidth = Math.min(100, Math.max(8, minValue));
   const padraoWidth = Math.min(100, Math.max(8, padraoValue));
   const maxWidth = Math.min(100, Math.max(8, maxValue));
-  const backgroundImage = jogo.imagem_url ? `url('${jogo.imagem_url}')` : "none";
+  const proxiedImageUrl = proxyImageUrl(jogo.imagem_url);
+  const backgroundImage = proxiedImageUrl ? `url('${proxiedImageUrl}')` : "none";
 
   return `
     <div class="row" style="--row-image: ${backgroundImage}">
@@ -209,23 +257,25 @@ function renderRow(jogo, index) {
           <strong>${formatPercent(distributionValue)}</strong>
         </div>
         <div class="name">${jogo.nome}</div>
+        ${jogo.fabricante ? `<div class="provider-badge">${jogo.fabricante}</div>` : ""}
         <div class="stats-card">
           <div class="stat-row">
             <span>Mínima</span>
             <strong>${formatPercent(minValue)}</strong>
           </div>
-          <div class="stat-bar"><span class="stat-fill min" style="width:${minWidth}%"></span></div>
+          <div class="stat-bar"><span class="stat-fill min" style="width:${minWidth}%; background:${getStatGradient(minValue)}"></span></div>
           <div class="stat-row">
             <span>Padrão</span>
             <strong>${formatPercent(padraoValue)}</strong>
           </div>
-          <div class="stat-bar"><span class="stat-fill padrao" style="width:${padraoWidth}%"></span></div>
+          <div class="stat-bar"><span class="stat-fill padrao" style="width:${padraoWidth}%; background:${getStatGradient(padraoValue)}"></span></div>
           <div class="stat-row">
             <span>Máxima</span>
             <strong>${formatPercent(maxValue)}</strong>
           </div>
-          <div class="stat-bar"><span class="stat-fill max" style="width:${maxWidth}%"></span></div>
+          <div class="stat-bar"><span class="stat-fill max" style="width:${maxWidth}%; background:${getStatGradient(maxValue)}"></span></div>
         </div>
+        <div style="margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.1); font-size: 0.85rem; color: rgba(255,255,255,0.6);">${origem}</div>
       </div>
     </div>`;
 }
@@ -240,9 +290,8 @@ function getMetricClass(value) {
 function render(data) {
   currentData = data;
 
-  // Computa os melhores jogos por cada site usando o filtro atual.
-  updateFilterButtons();
-  updateSiteFilterButtons();
+  // Computa os melhores jogos combinados usando o filtro atual.
+  buildProviderSelectOptions();
   renderGames();
 }
 
@@ -251,49 +300,111 @@ function getTopByFilter(jogos) {
   return sortGamesByFilter(jogos)[0] || null;
 }
 
-// Renderiza todas as listas de jogos na página, uma por site.
+// Renderiza uma lista única com todos os jogos combinados de ambos sites.
 function renderGames() {
-  if (!currentData) return;
+  if (!currentData || !combinedList) return;
 
-  for (const [site, el] of Object.entries(lists)) {
-    const jogos = currentData.porSite?.[site] || [];
-    const sortedGames = sortGamesByFilter(jogos);
-    el.innerHTML = sortedGames.length ? sortedGames.map(renderRow).join("") : `<div class="empty">Nenhum jogo encontrado.</div>`;
+  // Combinar todos os jogos de ambos os sites
+  const allGames = [];
+  for (const [site, jogosSiteData] of Object.entries(currentData.porSite || {})) {
+    // Handle nested structure (FP Sinais) or flat array (Rainha do Slot)
+    if (Array.isArray(jogosSiteData)) {
+      allGames.push(...(jogosSiteData || []));
+    } else {
+      // For object structures (manufacturer subcategories), flatten them
+      for (const [fab, jogosArray] of Object.entries(jogosSiteData || {})) {
+        allGames.push(...(jogosArray || []));
+      }
+    }
   }
+
+  // Filtrar por fabricante
+  const filteredGames = allGames.filter(
+    (jogo) => currentProvider === "all" || normalizeProviderName(jogo.fabricante) === currentProvider
+  );
+
+  // Ordenar usando a sequência personalizada de sortOrder, ou padrão se vazio
+  const defaultOrder = ["distribuicao", "aposta_minima"];
+  const orderToUse = sortOrder.length > 0 ? [...sortOrder, ...defaultOrder.filter((field) => !sortOrder.includes(field))] : defaultOrder;
+
+  const sortedGames = filteredGames.sort((a, b) => {
+    for (const field of orderToUse) {
+      const aVal = Number(a[field] ?? 0) || 0;
+      const bVal = Number(b[field] ?? 0) || 0;
+      if (aVal !== bVal) {
+        return bVal - aVal; // maior valor primeiro (DESC)
+      }
+    }
+    return 0; // são iguais em todos os critérios
+  });
+
+  combinedList.innerHTML = sortedGames.length
+    ? sortedGames.map(renderRow).join("")
+    : `<div class="empty">Nenhum jogo encontrado.</div>`;
 }
 
-// Ordena os jogos de forma decrescente de acordo com o filtro atual.
+// Ordena os jogos de forma decrescente por distribuição, depois por aposta_minima.
 function sortGamesByFilter(jogos) {
   return [...jogos].sort((a, b) => {
-    const aValue = Number(a[currentFilter] ?? 0) || 0;
-    const bValue = Number(b[currentFilter] ?? 0) || 0;
-    if (aValue < bValue) return 1;
-    if (aValue > bValue) return -1;
-    return 0;
+    const aDist = Number(a.distribuicao ?? 0) || 0;
+    const bDist = Number(b.distribuicao ?? 0) || 0;
+    if (aDist !== bDist) return bDist - aDist; // distribuição maior primeiro
+    const aMin = Number(a.aposta_minima ?? 0) || 0;
+    const bMin = Number(b.aposta_minima ?? 0) || 0;
+    return bMin - aMin; // aposta_minima maior primeiro
   });
 }
 
-// Atualiza o botão ativo conforme o filtro selecionado.
-function updateFilterButtons() {
-  filterButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.filter === currentFilter);
-  });
+
+function getProviderLabel(normalized, rawName) {
+  const mapping = {
+    pg: "PG",
+    pragmatic: "Pragmatic",
+    wg: "WG",
+    tada: "TaDa",
+  };
+  if (mapping[normalized]) return mapping[normalized];
+  if (rawName) return String(rawName).trim();
+  return normalized.replace(/[-_]/g, " ");
 }
 
-function updateSiteFilterButtons() {
-  siteFilterButtons.forEach((button) => {
-    button.classList.toggle("active", button.dataset.site === currentSite);
-  });
+function buildProviderSelectOptions() {
+  if (!currentData || !providerSelect) return;
 
-  if (currentSite === "rainha") {
-    rainhaPanel.classList.remove("hidden");
-    fpPanel.classList.add("hidden");
-  } else if (currentSite === "fp") {
-    rainhaPanel.classList.add("hidden");
-    fpPanel.classList.remove("hidden");
+  // Coletar todos os provedores de ambos os sites
+  const providers = new Map();
+  for (const [site, jogosSiteData] of Object.entries(currentData.porSite || {})) {
+    let jogosArray = [];
+    // Handle nested structure (FP Sinais) or flat array (Rainha do Slot)
+    if (Array.isArray(jogosSiteData)) {
+      jogosArray = jogosSiteData;
+    } else {
+      // For object structures (manufacturer subcategories), flatten them
+      for (const [fab, jogos] of Object.entries(jogosSiteData || {})) {
+        jogosArray.push(...(jogos || []));
+      }
+    }
+    
+    jogosArray.forEach((jogo) => {
+      const key = normalizeProviderName(jogo.fabricante);
+      if (!key || key === "unknown") return;
+      if (!providers.has(key)) providers.set(key, getProviderLabel(key, jogo.fabricante));
+    });
+  }
+
+  const order = ["pg", "pragmatic", "wg", "tada"];
+  const orderedKeys = [...new Set(order.filter((key) => providers.has(key)).concat([...providers.keys()].filter((key) => !order.includes(key))))];
+
+  providerSelect.innerHTML = [
+    `<option value="all">Todos</option>`,
+    ...orderedKeys.map((key) => `<option value="${key}">${providers.get(key)}</option>`),
+  ].join("");
+
+  if (orderedKeys.includes(currentProvider)) {
+    providerSelect.value = currentProvider;
   } else {
-    rainhaPanel.classList.remove("hidden");
-    fpPanel.classList.remove("hidden");
+    currentProvider = "all";
+    providerSelect.value = "all";
   }
 }
 
@@ -334,35 +445,82 @@ function tick() {
 }
 
 // Event listeners que ligam ações do usuário às funções.
-submitLogin.addEventListener("click", attemptLogin);
-loginPassword.addEventListener("keydown", (event) => {
+if (submitLogin) submitLogin.addEventListener("click", attemptLogin);
+if (loginPassword) loginPassword.addEventListener("keydown", (event) => {
   if (event.key === "Enter") attemptLogin();
 });
 
-savePlatforms.addEventListener("click", saveEditor);
-cancelEdit.addEventListener("click", closeModal);
+if (savePlatforms) savePlatforms.addEventListener("click", saveEditor);
+if (cancelEdit) cancelEdit.addEventListener("click", closeModal);
 
-document.querySelector("#closeModal").addEventListener("click", closeModal);
+const closeModalBtn = document.querySelector("#closeModal");
+if (closeModalBtn) closeModalBtn.addEventListener("click", closeModal);
 
-// Adiciona comportamento aos botões de filtro: troca o filtro ativo e re-renderiza os jogos.
-filterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    currentFilter = button.dataset.filter;
-    updateFilterButtons();
-    renderGames();
-  });
-});
-
-siteFilterButtons.forEach((button) => {
-  button.addEventListener("click", () => {
-    const selectedSite = button.dataset.site;
-    currentSite = currentSite === selectedSite ? "all" : selectedSite;
-    updateSiteFilterButtons();
-    renderGames();
-  });
+if (providerSelect) providerSelect.addEventListener("change", () => {
+  currentProvider = providerSelect.value;
+  renderGames();
 });
 
 // Atualização manual por clique e atualização automática periódica.
+// === GERENCIAMENTO DE ORDENAÇÃO CUSTOMIZÁVEL ===
+
+// Função para rastrear a ordem de cliques e atualizar UI dos botões
+function handleSortButtonClick(e) {
+  const btn = e.currentTarget;
+  const sortField = btn.dataset.sort;
+
+  if (!sortField) return;
+
+  // Se o botão já está na lista, remove (toogle)
+  const idx = sortOrder.indexOf(sortField);
+  if (idx !== -1) {
+    sortOrder.splice(idx, 1);
+  } else {
+    // Adiciona à lista de ordenação
+    sortOrder.push(sortField);
+  }
+
+  updateSortButtonsUI();
+  renderGames(); // re-renderiza com nova ordem
+}
+
+// Função para atualizar a UI dos botões (mostrar ordem numérica)
+function updateSortButtonsUI() {
+  const buttons = document.querySelectorAll(".sort-btn");
+  buttons.forEach((btn) => {
+    const sortField = btn.dataset.sort;
+    const orderSpan = btn.querySelector(".sort-order");
+    const idx = sortOrder.indexOf(sortField);
+
+    if (idx !== -1) {
+      // Botão está ativo
+      btn.classList.add("active");
+      orderSpan.classList.remove("hidden");
+      orderSpan.textContent = idx + 1; // mostrar 1, 2, 3, 4...
+    } else {
+      // Botão não está ativo
+      btn.classList.remove("active");
+      orderSpan.classList.add("hidden");
+      orderSpan.textContent = "";
+    }
+  });
+}
+
+// Função para limpar a ordenação e voltar ao padrão (distribuição + mínima)
+function resetSortOrder() {
+  sortOrder = [];
+  updateSortButtonsUI();
+  renderGames();
+}
+
+// Attach event listeners aos botões de ordenação
+const sortButtons = document.querySelectorAll(".sort-btn");
+const resetSortBtn = document.querySelector("#resetSort");
+sortButtons.forEach((btn) => btn.addEventListener("click", handleSortButtonClick));
+if (resetSortBtn) resetSortBtn.addEventListener("click", resetSortOrder);
+
+// === FIM GERENCIAMENTO DE ORDENAÇÃO ===
+
 refreshBtn.addEventListener("click", atualizar);
 scrollTopBtn?.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
 window.addEventListener("scroll", () => {
@@ -374,6 +532,5 @@ setInterval(atualizar, REFRESH_MS);
 setInterval(tick, 1000);
 
 renderPlatformCards();
-updateSiteFilterButtons();
-updateFilterButtons();
+buildProviderSelectOptions();
 atualizar();
